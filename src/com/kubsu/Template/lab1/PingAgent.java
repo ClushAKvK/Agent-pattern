@@ -1,4 +1,4 @@
-package com.kubsu.Template;
+package com.kubsu.Template.lab1;
 
 import jade.core.*;
 import jade.core.behaviours.*;
