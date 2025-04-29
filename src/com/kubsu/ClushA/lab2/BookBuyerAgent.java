@@ -37,8 +37,11 @@ import jade.lang.acl.MessageTemplate;
 public class BookBuyerAgent extends Agent {
 	// The title of the book to buy
 	private String targetBookTitle;
+	private double minRating;
 	// The list of known seller agents
 	private AID[] sellerAgents;
+
+	private BookBuyerLeaveRatingGui ratingGui;
 
 	// Put agent initializations here
 	protected void setup() {
@@ -47,12 +50,15 @@ public class BookBuyerAgent extends Agent {
 
 		// Get the title of the book to buy as a start-up argument
 		Object[] args = getArguments();
+		System.out.println(args[1].toString());
 		if (args != null && args.length > 0) {
 			targetBookTitle = (String) args[0];
+			minRating = Double.parseDouble(args[1].toString());
 			System.out.println("Target book is "+targetBookTitle);
+			System.out.println("Minimal seller rating is " + minRating);
 
 			// Add a TickerBehaviour that schedules a request to seller agents every minute
-			addBehaviour(new TickerBehaviour(this, 60000) {
+			addBehaviour(new TickerBehaviour(this, 10000) {
 				protected void onTick() {
 					System.out.println("Trying to buy "+targetBookTitle);
 					// Update the list of seller agents
@@ -99,6 +105,7 @@ public class BookBuyerAgent extends Agent {
 	private class RequestPerformer extends Behaviour {
 		private AID bestSeller; // The agent who provides the best offer 
 		private int bestPrice;  // The best offered price
+		private double bestRating;
 		private int repliesCnt = 0; // The counter of replies from seller agents
 		private MessageTemplate mt; // The template to receive replies
 		private int step = 0;
@@ -126,13 +133,23 @@ public class BookBuyerAgent extends Agent {
 				if (reply != null) {
 					// Reply received
 					if (reply.getPerformative() == ACLMessage.PROPOSE) {
-						// This is an offer 
-						int price = Integer.parseInt(reply.getContent());
-						if (bestSeller == null || price < bestPrice) {
-							// This is the best offer at present
+						// This is an offer
+
+						int price = Integer.parseInt(reply.getContent().split(";")[0]);
+						double rating = Double.parseDouble(reply.getContent().split(";")[1]);
+						//System.out.println(rating + "FROM BUYER");
+						if (bestSeller == null
+								|| (bestRating < rating && bestRating < minRating)
+								|| (bestRating >= minRating && price < bestPrice)) {
 							bestPrice = price;
+							bestRating = rating;
 							bestSeller = reply.getSender();
 						}
+//						if (bestSeller == null || price < bestPrice) {
+//							// This is the best offer at present
+//							bestPrice = price;
+//							bestSeller = reply.getSender();
+//						}
 					}
 					repliesCnt++;
 					if (repliesCnt >= sellerAgents.length) {
@@ -166,7 +183,8 @@ public class BookBuyerAgent extends Agent {
 						// Purchase successful. We can terminate
 						System.out.println(targetBookTitle+" successfully purchased from agent "+reply.getSender().getName());
 						System.out.println("Price = "+bestPrice);
-						myAgent.doDelete();
+						System.out.println("Seller rating = " + bestRating);
+						//myAgent.doDelete();
 					}
 					else {
 						System.out.println("Attempt failed: requested book already sold.");
@@ -178,14 +196,22 @@ public class BookBuyerAgent extends Agent {
 					block();
 				}
 				break;
-			}        
+			case 4:
+				ratingGui = new BookBuyerLeaveRatingGui(myAgent, bestSeller);
+				ratingGui.showGui();
+
+				myAgent.doDelete();
+
+				step = 5;
+
+			}
 		}
 
 		public boolean done() {
 			if (step == 2 && bestSeller == null) {
 				System.out.println("Attempt failed: "+targetBookTitle+" not available for sale");
 			}
-			return ((step == 2 && bestSeller == null) || step == 4);
+			return ((step == 2 && bestSeller == null) || step == 5);
 		}
 	}  // End of inner class RequestPerformer
 }

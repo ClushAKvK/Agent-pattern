@@ -41,6 +41,10 @@ public class BookSellerAgent extends Agent{
 	// The GUI by means of which the user can add books in the catalogue
 	private BookSellerGui myGui;
 
+	private double rating = 10;
+	private int rateCnt = 1;
+	private int rateSum = 10;
+
 	// Put agent initializations here
 	protected void setup() {
 		// Create the catalogue
@@ -69,6 +73,8 @@ public class BookSellerAgent extends Agent{
 
 		// Add the behaviour serving purchase orders from buyer agents
 		addBehaviour(new PurchaseOrdersServer());
+
+		addBehaviour(new GetFeedbackServer());
 	}
 
 	// Put agent clean-up operations here
@@ -98,6 +104,13 @@ public class BookSellerAgent extends Agent{
 		} );
 	}
 
+	public void submitRating(int newRate) {
+		rateCnt++;
+		rateSum += newRate;
+		this.rating = (double) rateSum / rateCnt;
+		System.out.println("Updated " + getName() + " rating to " + this.rating);
+	}
+
 	/**
 	   Inner class OfferRequestsServer.
 	   This is the behaviour used by Book-seller agents to serve incoming requests 
@@ -119,7 +132,7 @@ public class BookSellerAgent extends Agent{
 				if (price != null) {
 					// The requested book is available for sale. Reply with the price
 					reply.setPerformative(ACLMessage.PROPOSE);
-					reply.setContent(String.valueOf(price.intValue()));
+					reply.setContent(String.valueOf(price.intValue()) + ";" + String.valueOf(rating));
 				}
 				else {
 					// The requested book is NOT available for sale.
@@ -168,4 +181,22 @@ public class BookSellerAgent extends Agent{
 			}
 		}
 	}  // End of inner class OfferRequestsServer
+
+	private class GetFeedbackServer extends CyclicBehaviour {
+		public void action() {
+			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+			ACLMessage msg = myAgent.receive(mt);
+			if (msg != null) {
+				Integer rate = Integer.parseInt(msg.getContent());
+				submitRating(rate);
+			}
+			else {
+				block();
+			}
+		}
+	}  // End of inner class OfferRequestsServer
+
+
+
+
 }
