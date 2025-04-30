@@ -1,1 +1,1 @@
-http://NTB-USHROOM.net.billing.ru:7778/acc
+http://v1256-cs6824x-vss-1-srv-u4-spb.net.billing.ru:7778/acc
