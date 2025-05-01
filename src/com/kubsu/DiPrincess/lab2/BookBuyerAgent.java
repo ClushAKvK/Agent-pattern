@@ -52,7 +52,7 @@ public class BookBuyerAgent extends Agent {
 			System.out.println("Target book is "+targetBookTitle);
 
 			// Add a TickerBehaviour that schedules a request to seller agents every minute
-			addBehaviour(new TickerBehaviour(this, 60000) {
+			addBehaviour(new TickerBehaviour(this, 10000) {
 				protected void onTick() {
 					System.out.println("Trying to buy "+targetBookTitle);
 					// Update the list of seller agents
@@ -98,7 +98,7 @@ public class BookBuyerAgent extends Agent {
 	 */
 	private class RequestPerformer extends Behaviour {
 		private AID bestSeller; // The agent who provides the best offer 
-		private int bestPrice;  // The best offered price
+		private double bestPrice;  // The best offered price
 		private int repliesCnt = 0; // The counter of replies from seller agents
 		private MessageTemplate mt; // The template to receive replies
 		private int step = 0;
@@ -127,7 +127,7 @@ public class BookBuyerAgent extends Agent {
 					// Reply received
 					if (reply.getPerformative() == ACLMessage.PROPOSE) {
 						// This is an offer 
-						int price = Integer.parseInt(reply.getContent());
+						double price = Double.parseDouble(reply.getContent());
 						if (bestSeller == null || price < bestPrice) {
 							// This is the best offer at present
 							bestPrice = price;

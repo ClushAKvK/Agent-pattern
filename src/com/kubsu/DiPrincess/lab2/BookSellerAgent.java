@@ -26,6 +26,7 @@ package com.kubsu.DiPrincess.lab2;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -33,11 +34,12 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 
 public class BookSellerAgent extends Agent{
 	// The catalogue of books for sale (maps the title of a book to its price)
-	private Hashtable catalogue;
+	private Hashtable<String, Object[]> catalogue;
 	// The GUI by means of which the user can add books in the catalogue
 	private BookSellerGui myGui;
 
@@ -89,13 +91,28 @@ public class BookSellerAgent extends Agent{
 	/**
      This is invoked by the GUI when the user adds a new book for sale
 	 */
-	public void updateCatalogue(final String title, final int price) {
+	public void updateCatalogue(final String title, final double price, final int discount) {
 		addBehaviour(new OneShotBehaviour() {
 			public void action() {
-				catalogue.put(title, new Integer(price));
-				System.out.println(title+" inserted into catalogue. Price = "+price);
+//				catalogue.put(title, new Double(price));
+				catalogue.put(title, new Object[] {price, discount});
+				System.out.println(title + " inserted into catalogue. Price = " + price + ", Fast sell discount = " + discount);
 			}
 		} );
+		addBehaviour(new WakerBehaviour(this, 30000) {
+			protected void handleElapsedTimeout() {
+				try {
+					Object[] values = catalogue.get(title);
+					values[1] = 0;
+					catalogue.put(title, values);
+					System.out.println("Event of Fast sell is gone for " + title + " ! Current discount = " + values[1]);
+				}
+				catch (NullPointerException ignored) { }
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	/**
@@ -115,11 +132,14 @@ public class BookSellerAgent extends Agent{
 				String title = msg.getContent();
 				ACLMessage reply = msg.createReply();
 
-				Integer price = (Integer) catalogue.get(title);
+//				Integer price = (Integer) catalogue.get(title);
+				Object[] values = catalogue.get(title);
+				Double price = (Double) values[0];
+				Integer discount = (Integer) values[1];
 				if (price != null) {
 					// The requested book is available for sale. Reply with the price
 					reply.setPerformative(ACLMessage.PROPOSE);
-					reply.setContent(String.valueOf(price.intValue()));
+					reply.setContent(String.valueOf(price * ((100 - discount.doubleValue()) / 100)));
 				}
 				else {
 					// The requested book is NOT available for sale.
@@ -151,7 +171,11 @@ public class BookSellerAgent extends Agent{
 				String title = msg.getContent();
 				ACLMessage reply = msg.createReply();
 
-				Integer price = (Integer) catalogue.remove(title);
+				Object[] values = catalogue.get(title);
+				Integer discount = (Integer) values[1];
+				Double price = (Double) values[0] * ((100 - discount.doubleValue()) / 100);
+				catalogue.remove(title);
+
 				if (price != null) {
 					reply.setPerformative(ACLMessage.INFORM);
 					System.out.println(title+" sold to agent "+msg.getSender().getName());
