@@ -194,7 +194,7 @@ public class BookSellerAgent extends Agent{
 				block();
 			}
 		}
-	}  // End of inner class OfferRequestsServer
+	}  // End of inner class GetFeedbackServer
 
 
 

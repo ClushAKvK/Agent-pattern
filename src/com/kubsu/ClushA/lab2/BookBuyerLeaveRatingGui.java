@@ -61,7 +61,7 @@ class BookBuyerLeaveRatingGui extends JFrame {
 					rate.setReplyWith("rate" + System.currentTimeMillis());
 					myAgent.send(rate);
 
-					System.out.println(myAgent.getName() + " rate " + seller.getName() + "as " + selectedRating);
+					System.out.println(myAgent.getName() + " rate " + seller.getName() + " as " + selectedRating);
 
 					JOptionPane.showMessageDialog(BookBuyerLeaveRatingGui.this,
 							"Thank you! You rated: " + selectedRating + " ★", "Success", JOptionPane.INFORMATION_MESSAGE);

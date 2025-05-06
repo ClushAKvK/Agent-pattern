@@ -50,7 +50,7 @@ public class BookBuyerAgent extends Agent {
 
 		// Get the title of the book to buy as a start-up argument
 		Object[] args = getArguments();
-		System.out.println(args[1].toString());
+//		System.out.println(args[1].toString());
 		if (args != null && args.length > 0) {
 			targetBookTitle = (String) args[0];
 			minRating = Double.parseDouble(args[1].toString());
@@ -140,7 +140,7 @@ public class BookBuyerAgent extends Agent {
 						//System.out.println(rating + "FROM BUYER");
 						if (bestSeller == null
 								|| (bestRating < rating && bestRating < minRating)
-								|| (bestRating >= minRating && price < bestPrice)) {
+								|| (rating >= minRating && price < bestPrice)) {
 							bestPrice = price;
 							bestRating = rating;
 							bestSeller = reply.getSender();
